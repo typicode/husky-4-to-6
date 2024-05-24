@@ -3,25 +3,27 @@ import { cosmiconfigSync } from 'cosmiconfig'
 import fs from 'fs'
 import { set } from 'husky'
 
-function searchResult(): {
+interface SearchResult {
   hooks: { [key: string]: string }
   filepath: string | undefined
-} {
+}
+
+function searchResult(): SearchResult {
   const explorer = cosmiconfigSync('husky')
 
   const result = explorer.search()
   if (result === null) {
-    throw new Error('no husky 4 config found')
+    throw new Error('No Husky v4 config found')
   }
 
   interface Config {
     hooks?: { [key: string]: string }
   }
-  const config = result?.config as Config
+  const config = result.config as Config
 
   return {
     hooks: config?.hooks || {},
-    filepath: result?.filepath,
+    filepath: result.filepath,
   }
 }
 
@@ -30,17 +32,16 @@ function showManualUpdateMessage(hooks: { [key: string]: string }) {
 
   // Simple heuristic to check if hook needs to be manually updated
   const packageManagers = ['npm', 'npx', 'yarn', 'pnpm', 'pnpx']
-  const otherCriterias = ['HUSKY_GIT_PARAMS', '&&', '||']
-  if (hooks) {
-    Object.entries(hooks).forEach(([name, script]) => {
-      if (
-        !packageManagers.some((s) => script.startsWith(s)) ||
-        otherCriterias.some((s) => script.includes(s))
-      ) {
-        names.push(name)
-      }
-    })
-  }
+  const otherCriteria = ['HUSKY_GIT_PARAMS', '&&', '||']
+
+  Object.entries(hooks).forEach(([name, script]) => {
+    if (
+      !packageManagers.some((pm) => script.startsWith(pm)) ||
+      otherCriteria.some((crit) => script.includes(crit))
+    ) {
+      names.push(name)
+    }
+  })
 
   // Show manual update message
   if (names.length > 0) {
